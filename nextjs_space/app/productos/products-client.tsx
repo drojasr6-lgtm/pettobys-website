@@ -1,168 +1,135 @@
-'use client';
+"use client";
 
-import { useEffect, useState } from 'react';
-import { motion } from 'framer-motion';
-import { Filter, Search } from 'lucide-react';
-import ProductCard from '@/components/product-card';
+import { useMemo, useState } from "react";
 
-interface Product {
+export type Product = {
   id: string;
   name: string;
-  nameEs: string;
+  slug: string;
   description: string;
-  descriptionEs: string;
-  imageUrl: string;
   category: string;
-  mainIngredients: string[];
-  nutritionProtein: string;
-  nutritionFat: string;
-  nutritionCalories: string;
-  composition: string;
-  portionSizes: string[];
-  featured: boolean;
-}
+  price: number;
+  imageUrl: string;
+  isFeatured: boolean;
+  inStock: boolean;
+};
 
-const categories = [
-  { value: 'all', label: 'Todos' },
-  { value: 'beef', label: 'Res' },
-  { value: 'chicken', label: 'Pollo' },
-  { value: 'turkey', label: 'Pavo' },
-  { value: 'lamb', label: 'Cordero' },
-];
+type ProductsClientProps = {
+  products: Product[];
+  categories: string[];
+};
 
-export default function ProductsClient() {
-  const [products, setProducts] = useState<Product[]>([]);
-  const [filteredProducts, setFilteredProducts] = useState<Product[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [selectedCategory, setSelectedCategory] = useState('all');
-  const [searchQuery, setSearchQuery] = useState('');
+export default function ProductsClient({
+  products,
+  categories,
+}: ProductsClientProps) {
+  const [search, setSearch] = useState("");
+  const [selectedCategory, setSelectedCategory] = useState<string>("Todos");
 
-  useEffect(() => {
-    fetch('/api/products')
-      .then((res) => res?.json?.())
-      .then((data) => {
-        const productList = data?.products ?? [];
-        setProducts(productList);
-        setFilteredProducts(productList);
-        setLoading(false);
-      })
-      .catch((error) => {
-        console.error('Error fetching products:', error);
-        setLoading(false);
-      });
-  }, []);
+  const filteredProducts = useMemo(() => {
+    return products.filter((product) => {
+      const matchesCategory =
+        selectedCategory === "Todos" ||
+        product.category.toLowerCase() === selectedCategory.toLowerCase();
 
-  useEffect(() => {
-    let filtered = [...(products ?? [])];
+      const text = (
+        product.name +
+        " " +
+        product.description +
+        " " +
+        product.category
+      ).toLowerCase();
 
-    if (selectedCategory !== 'all') {
-      filtered = filtered.filter((p) => p?.category === selectedCategory);
-    }
+      const matchesSearch = text.includes(search.toLowerCase());
 
-    if (searchQuery) {
-      filtered = filtered.filter((p) =>
-        p?.nameEs?.toLowerCase?.()?.includes?.(searchQuery?.toLowerCase?.() ?? '') ||
-        p?.name?.toLowerCase?.()?.includes?.(searchQuery?.toLowerCase?.() ?? '')
-      );
-    }
-
-    setFilteredProducts(filtered);
-  }, [selectedCategory, searchQuery, products]);
+      return matchesCategory && matchesSearch;
+    });
+  }, [products, selectedCategory, search]);
 
   return (
-    <div className="pt-20 min-h-screen bg-gradient-to-b from-white via-amber-50/30 to-white">
-      {/* Header Section */}
-      <section className="bg-gradient-to-r from-amber-500 to-orange-500 text-white py-20">
-        <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.6 }}
-            className="text-center"
+    <div className="max-w-6xl mx-auto px-4 py-10">
+      {/* Filtros */}
+      <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 mb-8">
+        {/* Categoría */}
+        <div className="flex items-center gap-2">
+          <span className="font-medium">Categoría:</span>
+          <select
+            value={selectedCategory}
+            onChange={(e) => setSelectedCategory(e.target.value)}
+            className="border rounded-md px-3 py-2 text-sm"
           >
-            <h1 className="text-4xl md:text-5xl font-bold mb-4">
-              Nuestros Productos
-            </h1>
-            <p className="text-xl text-white/90 max-w-2xl mx-auto">
-              Alimentación natural, balanceada y deliciosa para la salud y felicidad de tu perro.
-            </p>
-          </motion.div>
+            <option value="Todos">Todos</option>
+            {categories.map((cat) => (
+              <option key={cat} value={cat}>
+                {cat.charAt(0).toUpperCase() + cat.slice(1)}
+              </option>
+            ))}
+          </select>
         </div>
-      </section>
 
-      {/* Filters Section */}
-      <section className="py-8 bg-white shadow-sm sticky top-20 z-40">
-        <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-          <div className="flex flex-col md:flex-row gap-4 items-center justify-between">
-            {/* Category Filter */}
-            <div className="flex items-center gap-2 w-full md:w-auto">
-              <Filter className="w-5 h-5 text-gray-600" />
-              <select
-                value={selectedCategory}
-                onChange={(e) => setSelectedCategory(e?.target?.value ?? 'all')}
-                className="flex-1 md:flex-none px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-amber-500 bg-white text-gray-700"
-              >
-                {categories?.map?.((cat) => (
-                  <option key={cat?.value} value={cat?.value ?? 'all'}>
-                    {cat?.label ?? ''}
-                  </option>
-                ))}
-              </select>
-            </div>
+        {/* Buscador */}
+        <div className="flex-1 md:max-w-md">
+          <input
+            type="text"
+            placeholder="Buscar productos..."
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            className="w-full border rounded-md px-3 py-2 text-sm"
+          />
+        </div>
+      </div>
 
-            {/* Search Bar */}
-            <div className="flex items-center gap-2 w-full md:w-auto md:flex-1 max-w-md">
-              <div className="relative w-full">
-                <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
-                <input
-                  type="text"
-                  placeholder="Buscar productos..."
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e?.target?.value ?? '')}
-                  className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-amber-500"
+      {/* Contador */}
+      <p className="text-sm text-gray-600 mb-4">
+        {filteredProducts.length} producto
+        {filteredProducts.length !== 1 ? "s" : ""} encontrados
+      </p>
+
+      {/* Grid de productos */}
+      {filteredProducts.length === 0 ? (
+        <div className="text-center text-gray-500 py-16">
+          No se encontraron productos
+        </div>
+      ) : (
+        <div className="grid gap-6 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3">
+          {filteredProducts.map((product) => (
+            <div
+              key={product.id}
+              className="border rounded-xl p-4 shadow-sm bg-white flex flex-col"
+            >
+              <div className="aspect-[4/3] mb-4 bg-gray-100 rounded-lg overflow-hidden flex items-center justify-center">
+                {/* Aquí podrías usar next/image si quieres */}
+                <img
+                  src={product.imageUrl}
+                  alt={product.name}
+                  className="object-cover h-full w-full"
                 />
               </div>
+              <h3 className="font-semibold text-lg mb-1">{product.name}</h3>
+              <p className="text-sm text-gray-600 mb-2 line-clamp-2">
+                {product.description}
+              </p>
+              <p className="text-sm text-gray-500 mb-3">
+                Categoría: {product.category}
+              </p>
+              <div className="mt-auto flex items-center justify-between">
+                <span className="font-bold text-orange-600">
+                  ${product.price.toLocaleString("es-CO")}
+                </span>
+                {product.inStock ? (
+                  <span className="text-xs px-2 py-1 rounded-full bg-green-100 text-green-700">
+                    En stock
+                  </span>
+                ) : (
+                  <span className="text-xs px-2 py-1 rounded-full bg-red-100 text-red-700">
+                    Agotado
+                  </span>
+                )}
+              </div>
             </div>
-
-            {/* Results Count */}
-            <div className="text-sm text-gray-600 w-full md:w-auto text-center md:text-right">
-              {filteredProducts?.length ?? 0} productos encontrados
-            </div>
-          </div>
+          ))}
         </div>
-      </section>
-
-      {/* Products Grid */}
-      <section className="py-16">
-        <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-          {loading ? (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-8">
-              {[1, 2, 3, 4, 5, 6, 7, 8].map((i) => (
-                <div key={i} className="bg-white rounded-xl shadow-md h-96 animate-pulse" />
-              ))}
-            </div>
-          ) : filteredProducts?.length > 0 ? (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-8">
-              {filteredProducts?.map?.((product, index) => (
-                <ProductCard key={product?.id ?? index} product={product} index={index} />
-              ))}
-            </div>
-          ) : (
-            <div className="text-center py-20">
-              <p className="text-xl text-gray-600 mb-4">No se encontraron productos</p>
-              <button
-                onClick={() => {
-                  setSelectedCategory('all');
-                  setSearchQuery('');
-                }}
-                className="text-amber-600 hover:text-amber-700 font-semibold"
-              >
-                Limpiar filtros
-              </button>
-            </div>
-          )}
-        </div>
-      </section>
+      )}
     </div>
   );
 }
