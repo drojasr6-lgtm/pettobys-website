@@ -1,12 +1,47 @@
-import ProductsClient from './products-client';
+// nextjs_space/app/productos/page.tsx
 
-export const dynamic = 'force-dynamic';
+import ProductsClient from "./products-client";
 
-export const metadata = {
-  title: 'Productos - Pettobys',
-  description: 'Descubre nuestra línea completa de alimentos naturales para perros. Comidas balanceadas con 60% carne y 40% vegetales.',
+// Tipo básico de producto (ajústalo si ya tienes uno definido en tu proyecto)
+type Product = {
+  id: string;
+  name: string;
+  slug: string;
+  description: string;
+  category: string;
+  price: number;
+  imageUrl: string;
+  isFeatured: boolean;
+  inStock: boolean;
 };
 
-export default function ProductsPage() {
-  return <ProductsClient />;
+// Esta función se ejecuta en el servidor y llama a la API /api/products
+async function getProductsFromApi(): Promise<Product[]> {
+  try {
+    const res = await fetch(
+      `${process.env.NEXT_PUBLIC_SITE_URL ?? ""}/api/products`,
+      {
+        // Para que no use caché y siempre traiga los productos actuales
+        cache: "no-store",
+      }
+    );
+
+    if (!res.ok) {
+      console.error("Error al obtener productos:", res.status);
+      return [];
+    }
+
+    const data = (await res.json()) as Product[];
+    return data;
+  } catch (error) {
+    console.error("Error llamando a /api/products:", error);
+    return [];
+  }
+}
+
+// Componente de página (Server Component)
+export default async function ProductsPage() {
+  const products = await getProductsFromApi();
+
+  return <ProductsClient products={products} />;
 }
