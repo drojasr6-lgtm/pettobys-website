@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 
 export type Product = {
   id: string;
@@ -14,122 +14,228 @@ export type Product = {
   inStock: boolean;
 };
 
-type ProductsClientProps = {
-  products: Product[];
-  categories: string[];
-};
+export default function ProductsClient() {
+  const [products, setProducts] = useState<Product[]>([]);
+  const [categoryFilter, setCategoryFilter] = useState<string>("Todos");
+  const [search, setSearch] = useState<string>("");
+  const [loading, setLoading] = useState<boolean>(true);
+  const [error, setError] = useState<string | null>(null);
 
-export default function ProductsClient({
-  products,
-  categories,
-}: ProductsClientProps) {
-  const [search, setSearch] = useState("");
-  const [selectedCategory, setSelectedCategory] = useState<string>("Todos");
+  // 1. Traer productos desde /api/products PERO EN EL CLIENTE
+  useEffect(() => {
+    async function loadProducts() {
+      try {
+        setLoading(true);
+        setError(null);
 
+        const res = await fetch("/api/products", {
+          cache: "no-store",
+        });
+
+        if (!res.ok) {
+          setError(`Error al cargar productos (${res.status})`);
+          setProducts([]);
+          return;
+        }
+
+        const data = (await res.json()) as Product[];
+        setProducts(data);
+      } catch (err) {
+        console.error("Error haciendo fetch a /api/products:", err);
+        setError("No fue posible cargar los productos.");
+        setProducts([]);
+      } finally {
+        setLoading(false);
+      }
+    }
+
+    loadProducts();
+  }, []);
+
+  // 2. Sacar categorías únicas
+  const categories = useMemo(() => {
+    const set = new Set<string>();
+    products.forEach((p) => set.add(p.category));
+    return ["Todos", ...Array.from(set)];
+  }, [products]);
+
+  // 3. Aplicar filtros (categoría + búsqueda)
   const filteredProducts = useMemo(() => {
-    return products.filter((product) => {
-      const matchesCategory =
-        selectedCategory === "Todos" ||
-        product.category.toLowerCase() === selectedCategory.toLowerCase();
+    let list = [...products];
 
-      const text = (
-        product.name +
-        " " +
-        product.description +
-        " " +
-        product.category
-      ).toLowerCase();
+    if (categoryFilter !== "Todos") {
+      list = list.filter((p) => p.category === categoryFilter);
+    }
 
-      const matchesSearch = text.includes(search.toLowerCase());
+    if (search.trim()) {
+      const term = search.trim().toLowerCase();
+      list = list.filter(
+        (p) =>
+          p.name.toLowerCase().includes(term) ||
+          p.description.toLowerCase().includes(term) ||
+          p.slug.toLowerCase().includes(term)
+      );
+    }
 
-      return matchesCategory && matchesSearch;
-    });
-  }, [products, selectedCategory, search]);
+    return list;
+  }, [products, categoryFilter, search]);
 
+  // 4. Render
   return (
-    <div className="max-w-6xl mx-auto px-4 py-10">
-      {/* Filtros */}
-      <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 mb-8">
-        {/* Categoría */}
-        <div className="flex items-center gap-2">
-          <span className="font-medium">Categoría:</span>
-          <select
-            value={selectedCategory}
-            onChange={(e) => setSelectedCategory(e.target.value)}
-            className="border rounded-md px-3 py-2 text-sm"
-          >
-            <option value="Todos">Todos</option>
-            {categories.map((cat) => (
-              <option key={cat} value={cat}>
-                {cat.charAt(0).toUpperCase() + cat.slice(1)}
-              </option>
-            ))}
-          </select>
-        </div>
-
-        {/* Buscador */}
-        <div className="flex-1 md:max-w-md">
-          <input
-            type="text"
-            placeholder="Buscar productos..."
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-            className="w-full border rounded-md px-3 py-2 text-sm"
-          />
-        </div>
+    <main style={{ padding: "2rem" }}>
+      {/* Header simple (tu hero naranja ya lo pone el layout general) */}
+      <div style={{ marginBottom: "1.5rem" }}>
+        <h1
+          style={{
+            fontSize: "2rem",
+            fontWeight: 700,
+            marginBottom: "0.5rem",
+          }}
+        >
+          Nuestros Productos
+        </h1>
+        <p style={{ color: "#555" }}>
+          {filteredProducts.length} producto
+          {filteredProducts.length !== 1 ? "s" : ""} encontrado
+          {filteredProducts.length !== 1 ? "s" : ""}.
+        </p>
       </div>
 
-      {/* Contador */}
-      <p className="text-sm text-gray-600 mb-4">
-        {filteredProducts.length} producto
-        {filteredProducts.length !== 1 ? "s" : ""} encontrados
-      </p>
+      {/* Filtros */}
+      <div
+        style={{
+          display: "flex",
+          gap: "1rem",
+          marginBottom: "1.5rem",
+          flexWrap: "wrap",
+        }}
+      >
+        <select
+          value={categoryFilter}
+          onChange={(e) => setCategoryFilter(e.target.value)}
+          style={{ padding: "0.5rem 0.75rem" }}
+        >
+          {categories.map((cat) => (
+            <option key={cat} value={cat}>
+              {cat === "Todos" ? "Todas las categorías" : cat}
+            </option>
+          ))}
+        </select>
 
-      {/* Grid de productos */}
-      {filteredProducts.length === 0 ? (
-        <div className="text-center text-gray-500 py-16">
-          No se encontraron productos
-        </div>
-      ) : (
-        <div className="grid gap-6 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3">
-          {filteredProducts.map((product) => (
-            <div
-              key={product.id}
-              className="border rounded-xl p-4 shadow-sm bg-white flex flex-col"
-            >
-              <div className="aspect-[4/3] mb-4 bg-gray-100 rounded-lg overflow-hidden flex items-center justify-center">
-                {/* Aquí podrías usar next/image si quieres */}
+        <input
+          type="text"
+          placeholder="Buscar productos..."
+          value={search}
+          onChange={(e) => setSearch(e.target.value)}
+          style={{ padding: "0.5rem 0.75rem", flex: "1 1 250px" }}
+        />
+      </div>
+
+      {/* Estados de carga / error */}
+      {loading && <p>Cargando productos...</p>}
+
+      {error && !loading && (
+        <p style={{ color: "red", marginBottom: "1rem" }}>{error}</p>
+      )}
+
+      {/* Lista de productos */}
+      {!loading && filteredProducts.length === 0 && !error && (
+        <p>No se encontraron productos.</p>
+      )}
+
+      <div
+        style={{
+          display: "grid",
+          gridTemplateColumns: "repeat(auto-fill, minmax(220px, 1fr))",
+          gap: "1.5rem",
+        }}
+      >
+        {filteredProducts.map((product) => (
+          <article
+            key={product.id}
+            style={{
+              border: "1px solid #eee",
+              borderRadius: "8px",
+              padding: "1rem",
+              boxShadow: "0 2px 4px rgba(0,0,0,0.04)",
+            }}
+          >
+            {product.imageUrl && (
+              <div
+                style={{
+                  width: "100%",
+                  paddingBottom: "60%",
+                  position: "relative",
+                  marginBottom: "0.75rem",
+                  overflow: "hidden",
+                  borderRadius: "6px",
+                  backgroundColor: "#fafafa",
+                }}
+              >
                 <img
                   src={product.imageUrl}
                   alt={product.name}
-                  className="object-cover h-full w-full"
+                  style={{
+                    position: "absolute",
+                    inset: 0,
+                    width: "100%",
+                    height: "100%",
+                    objectFit: "cover",
+                  }}
                 />
               </div>
-              <h3 className="font-semibold text-lg mb-1">{product.name}</h3>
-              <p className="text-sm text-gray-600 mb-2 line-clamp-2">
-                {product.description}
-              </p>
-              <p className="text-sm text-gray-500 mb-3">
-                Categoría: {product.category}
-              </p>
-              <div className="mt-auto flex items-center justify-between">
-                <span className="font-bold text-orange-600">
-                  ${product.price.toLocaleString("es-CO")}
-                </span>
-                {product.inStock ? (
-                  <span className="text-xs px-2 py-1 rounded-full bg-green-100 text-green-700">
-                    En stock
-                  </span>
-                ) : (
-                  <span className="text-xs px-2 py-1 rounded-full bg-red-100 text-red-700">
-                    Agotado
-                  </span>
-                )}
-              </div>
-            </div>
-          ))}
-        </div>
-      )}
-    </div>
+            )}
+
+            <h2
+              style={{
+                fontSize: "1.1rem",
+                fontWeight: 600,
+                marginBottom: "0.25rem",
+              }}
+            >
+              {product.name}
+            </h2>
+
+            <p
+              style={{
+                fontSize: "0.9rem",
+                color: "#666",
+                marginBottom: "0.5rem",
+              }}
+            >
+              {product.description}
+            </p>
+
+            <p
+              style={{
+                fontSize: "0.9rem",
+                fontWeight: 500,
+                marginBottom: "0.25rem",
+              }}
+            >
+              Categoría: {product.category}
+            </p>
+
+            <p
+              style={{
+                fontSize: "1rem",
+                fontWeight: 700,
+                marginBottom: "0.5rem",
+              }}
+            >
+              {product.price.toLocaleString("es-CO", {
+                style: "currency",
+                currency: "COP",
+                maximumFractionDigits: 0,
+              })}
+            </p>
+
+            {!product.inStock && (
+              <p style={{ color: "red", fontWeight: 600 }}>Agotado</p>
+            )}
+          </article>
+        ))}
+      </div>
+    </main>
   );
 }
