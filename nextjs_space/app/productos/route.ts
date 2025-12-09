@@ -1,36 +1,42 @@
-import { NextResponse } from "next/server";
+import { NextResponse } from 'next/server';
 
+// Productos de ejemplo (puedes cambiarlos luego)
 const products = [
   {
-    id: "pollo-premium-1kg",
-    name: "Pettobys Pollo Premium 1 kg",
-    description: "Alimento húmedo natural a base de pollo para perros adultos.",
-    price: 32000,
-    category: "Alimento",
-    image: "/products/pollo-premium-1kg.jpg",
+    id: '1',
+    name: 'Pettobys Adulto Pollo y Arroz',
+    slug: 'adulto-pollo-arroz',
+    description: 'Alimento seco balanceado para perros adultos, sabor pollo y arroz.',
+    category: 'adulto',
+    price: 95000,
+    imageUrl: '/images/products/adulto-pollo-arroz.png',
     isFeatured: true,
+    inStock: true,
   },
   {
-    id: "res-natural-500g",
-    name: "Pettobys Res Natural 500 g",
-    description: "Receta de res, sin conservantes ni subproductos.",
-    price: 19000,
-    category: "Alimento",
-    image: "/products/res-natural-500g.jpg",
+    id: '2',
+    name: 'Pettobys Cachorro Cordero',
+    slug: 'cachorro-cordero',
+    description: 'Fórmula especial para cachorros, con proteína de cordero y DHA.',
+    category: 'cachorro',
+    price: 99000,
+    imageUrl: '/images/products/cachorro-cordero.png',
     isFeatured: false,
+    inStock: true,
   },
   {
-    id: "snack-dental",
-    name: "Snacks Dentales Pettobys",
-    description: "Snacks funcionales para cuidado dental diario.",
-    price: 15000,
-    category: "Snacks",
-    image: "/products/snack-dental.jpg",
-    isFeatured: true,
+    id: '3',
+    name: 'Pettobys Sensitive Salmón',
+    slug: 'sensitive-salmon',
+    description: 'Alimento hipoalergénico para perros con piel y digestión sensibles.',
+    category: 'sensitive',
+    price: 115000,
+    imageUrl: '/images/products/sensitive-salmon.png',
+    isFeatured: false,
+    inStock: true,
   },
 ];
 
 export async function GET() {
   return NextResponse.json(products);
 }
-
