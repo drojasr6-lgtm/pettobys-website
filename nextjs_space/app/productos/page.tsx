@@ -1,22 +1,23 @@
 // nextjs_space/app/productos/page.tsx
 
-import ProductsClient, { Product } from "./products-client";
+import ProductsClient from "./products-client";
 
-function getBaseUrl() {
-  if (process.env.NEXT_PUBLIC_SITE_URL) {
-    return process.env.NEXT_PUBLIC_SITE_URL;
-  }
-  if (process.env.VERCEL_URL) {
-    return `https://${process.env.VERCEL_URL}`;
-  }
-  return "http://localhost:3000";
-}
+export type Product = {
+  id: string;
+  name: string;
+  slug: string;
+  description: string;
+  category: string;
+  price: number;
+  imageUrl: string;
+  isFeatured: boolean;
+  inStock: boolean;
+};
 
 async function getProductsFromApi(): Promise<Product[]> {
   try {
-    const baseUrl = getBaseUrl();
-
-    const res = await fetch(`${baseUrl}/api/products`, {
+    // RUTA RELATIVA: funciona en dev y en producción
+    const res = await fetch("/api/products", {
       cache: "no-store",
     });
 
@@ -35,7 +36,13 @@ async function getProductsFromApi(): Promise<Product[]> {
 
 export default async function ProductsPage() {
   const products = await getProductsFromApi();
+
   const categories = Array.from(new Set(products.map((p) => p.category)));
 
-  return <ProductsClient products={products} categories={categories} />;
+  return (
+    <ProductsClient
+      products={products}
+      categories={categories}
+    />
+  );
 }
