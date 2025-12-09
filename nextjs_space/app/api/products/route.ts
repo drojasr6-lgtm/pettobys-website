@@ -1,6 +1,8 @@
 import { NextResponse } from "next/server";
 
-// Productos de ejemplo - puedes cambiarlos luego
+// Productos reales que estás mostrando en la web
+// OJO: las rutas de imagen van a /products/... porque ahí es donde
+// realmente están los archivos dentro de /public/products
 const products = [
   {
     id: "1",
@@ -10,7 +12,7 @@ const products = [
       "Alimento seco balanceado para perros adultos, sabor pollo y arroz.",
     category: "adulto",
     price: 95000,
-    imageUrl: "/images/products/adulto-pollo-arroz.png",
+    imageUrl: "/products/beef-vegetables.jpg", // ← ESTE ARCHIVO EXISTE EN /public/products
     isFeatured: true,
     inStock: true,
   },
@@ -22,7 +24,7 @@ const products = [
       "Fórmula especial para cachorros, con proteína de cordero y DHA.",
     category: "cachorro",
     price: 99000,
-    imageUrl: "/images/products/cachorro-cordero.png",
+    imageUrl: "/products/chicken-broccoli.jpg", // ← TAMBIÉN EXISTE EN /public/products
     isFeatured: false,
     inStock: true,
   },
