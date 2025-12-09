@@ -2,8 +2,7 @@
 
 import ProductsClient from "./products-client";
 
-// Tipo básico de producto (ajústalo si ya tienes uno definido en tu proyecto)
-type Product = {
+export type Product = {
   id: string;
   name: string;
   slug: string;
@@ -15,33 +14,53 @@ type Product = {
   inStock: boolean;
 };
 
-// Esta función se ejecuta en el servidor y llama a la API /api/products
+// Construye una URL BASE absoluta para el servidor
+function getBaseUrl() {
+  // 1. Si definiste NEXT_PUBLIC_SITE_URL en Vercel, úsala
+  if (process.env.NEXT_PUBLIC_SITE_URL) {
+    return process.env.NEXT_PUBLIC_SITE_URL;
+  }
+
+  // 2. Si estás en Vercel, usa el dominio automático
+  if (process.env.VERCEL_URL) {
+    return `https://${process.env.VERCEL_URL}`;
+  }
+
+  // 3. Fallback local
+  return "http://localhost:3000";
+}
+
 async function getProductsFromApi(): Promise<Product[]> {
   try {
-    const res = await fetch(
-      `${process.env.NEXT_PUBLIC_SITE_URL ?? ""}/api/products`,
-      {
-        // Para que no use caché y siempre traiga los productos actuales
-        cache: "no-store",
-      }
-    );
+    const baseUrl = getBaseUrl();
+
+    const res = await fetch(`${baseUrl}/api/products`, {
+      cache: "no-store",
+    });
 
     if (!res.ok) {
-      console.error("Error al obtener productos:", res.status);
+      console.error("Error al llamar /api/products:", res.status);
       return [];
     }
 
     const data = (await res.json()) as Product[];
     return data;
   } catch (error) {
-    console.error("Error llamando a /api/products:", error);
+    console.error("Error haciendo fetch a /api/products:", error);
     return [];
   }
 }
 
-// Componente de página (Server Component)
 export default async function ProductsPage() {
   const products = await getProductsFromApi();
 
-  return <ProductsClient products={products} />;
+  // Si quieres categorías para el filtro:
+  const categories = Array.from(new Set(products.map((p) => p.category)));
+
+  return (
+    <ProductsClient
+      products={products}
+      categories={categories}
+    />
+  );
 }
