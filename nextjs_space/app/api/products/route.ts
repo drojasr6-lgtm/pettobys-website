@@ -1,28 +1,28 @@
-import { NextResponse } from 'next/server';
+import { NextResponse } from "next/server";
 
-// Example products - you can change them later
+// Productos de ejemplo - puedes cambiarlos luego
 const products = [
   {
-    id: '1',
-    name: 'Pettobys Adulto Pollo y Arroz',
-    slug: 'adulto-pollo-arroz',
+    id: "1",
+    name: "Pettobys Adulto Pollo y Arroz",
+    slug: "adulto-pollo-arroz",
     description:
-      'Alimento seco balanceado para perros adultos, sabor pollo y arroz.',
-    category: 'adulto',
+      "Alimento seco balanceado para perros adultos, sabor pollo y arroz.",
+    category: "adulto",
     price: 95000,
-    imageUrl: '/images/products/adulto-pollo-arroz.png',
+    imageUrl: "/images/products/adulto-pollo-arroz.png",
     isFeatured: true,
     inStock: true,
   },
   {
-    id: '2',
-    name: 'Pettobys Cachorro Cordero',
-    slug: 'cachorro-cordero',
+    id: "2",
+    name: "Pettobys Cachorro Cordero",
+    slug: "cachorro-cordero",
     description:
-      'Fórmula especial para cachorros, con proteína de cordero y DHA.',
-    category: 'cachorro',
+      "Fórmula especial para cachorros, con proteína de cordero y DHA.",
+    category: "cachorro",
     price: 99000,
-    imageUrl: '/images/products/cachorro-cordero.png',
+    imageUrl: "/images/products/cachorro-cordero.png",
     isFeatured: false,
     inStock: true,
   },
